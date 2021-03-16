@@ -99,9 +99,9 @@ const multer = require('multer');
 const fs = require('fs');
 var app = express();
 var port = process.env.PORT || 4000;
-
+app.options('*', cors());
 // enable CORS
-app.use(cors());
+// app.use(cors());
 
 // parse application/json
 app.use(bodyParser.json());
@@ -121,8 +121,9 @@ destination: (req, file, cb) => {
   const artifect_type = ((JSON.parse(JSON.stringify(req.body))).artifect_type);
   const filename = (JSON.parse(JSON.stringify(req.body))).filename;
   const dataFile = req.files;
-  file['artifect_type'] = artifect_type.split(',')[dataFile.length-1] ;
+  const art_type = artifect_type.split(',');
   const dir = ('./uploads'+base_path.split(',')[dataFile.length-1]).toString();
+  file['artifect_type'] =art_type[dataFile.length-1];
   fs.exists(dir, exist => {
   if (!exist) {
     return fs.mkdir(dir,{ recursive: true }, error => cb(error, dir))
@@ -131,7 +132,9 @@ destination: (req, file, cb) => {
   })
 },
 filename: (req, file, cb) => {
-  cb(null, Date.now()+'-' +file.originalname);
+
+  cb(null, Date.now()+'-' +file.originalname.replace(/\s+/g, ''));
+
   // cb(null, file.fieldname + '-' + Date.now());
 }
 })
@@ -150,23 +153,43 @@ const upload = multer({ storage })
 
 
 //handle multiple file upload
-app.post('/uploadfile', upload.array('dataFiles', 10), (req, res,next) => {
-
+app.post('/uploadfile',upload.array('dataFiles', 10),  (req, res,next) => {
+  try {
    const files = req.files;
-   const base_path = JSON.parse(JSON.stringify(req.body));
-   const artifect_type = JSON.parse(JSON.stringify(req.body));
+   const base_path = JSON.parse(JSON.stringify(req.body)).base_path;
+   const artifect_type = JSON.parse(JSON.stringify(req.body)).artifect_type;
 
    if (!files || (files && files.length === 0)) {
       return res.status(400).send({ message: 'Please upload a file.' });
    }
+   // else if (base_path.split(',').length != files.length){
+   //   return res.status(400).send({ message: 'base_path length are not same as files' });
+   // }
+   // else if (artifect_type.split(',').length != files.length){
+   //   return res.status(400).send({ message: 'Artifect_type length are not same as files' });
+   // }
+
+   files.forEach(function(file) {
+   file.path = 'http://51.83.41.210:4000/'+file.path;
+
+
+});
+
    return res.send({ message: 'File uploaded successfully.', files });
+ }
+ catch(error) {
+       console.log(error);
+        res.send(400);
+ }
 });
 //request handlers
 app.get('/', (req, res) => {
    res.send('<h1>File upload Api</h1><br><p>Call /uploadfile for single file upload using params dataFile and filename</p>'
    +'<br><p>Call /uploadmultifile for single file upload using params dataFiles and filename</p>');
 });
-
+// app.listen(80, function () {
+//   console.log('CORS-enabled web server listening on port 80')
+// })
 app.listen(port, () => {
    console.log('Server started on: ' + port);
 });
