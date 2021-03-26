@@ -170,7 +170,8 @@ app.post('/uploadfile',upload.array('dataFiles', 10),  (req, res,next) => {
    // }
 
    files.forEach(function(file) {
-   file.path = 'http://51.83.41.210:4000/'+file.path;
+console.log();
+   file.path = 'http://'+req.hostname+':'+port+'/'+file.path;
 
 
 });
