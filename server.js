@@ -101,7 +101,7 @@ var app = express();
 var port = process.env.PORT || 4000;
 app.options('*', cors());
 // enable CORS
-// app.use(cors());
+ app.use(cors());
 
 // parse application/json
 app.use(bodyParser.json());
